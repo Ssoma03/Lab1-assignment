@@ -34,4 +34,4 @@ README.md: This README file providing an overview of the project.
 Contributors
 
 Your Name
-Contributor Name
+Santhoshi Soma
