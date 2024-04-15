@@ -1,0 +1,68 @@
+# Load necessary packages
+library(tidyverse)
+library(tidymodels)
+
+# Choose the file path for the assessments dataset
+assessments_file_path <- file.choose()
+
+# Read the assessments dataset
+assessments_data <- read_csv(assessments_file_path)
+
+# Read the data for employees
+employees_file_path <- file.choose()  # Choose the file path for the employees dataset
+employees <- read_csv(employees_file_path)
+
+# Mutate variables for employees
+employees <- employees %>%
+  mutate(employment_status = ifelse(final_result == "Pass", 1, 0),
+         employment_status = as.factor(employment_status),
+         disability_status = as.factor(disability))
+
+# Examine the data for employees
+print(employees)
+
+# Feature engineering for employees (if needed)
+
+# Split data for employees
+set.seed(20230712)
+train_test_split <- initial_split(employees, prop = 0.80)
+data_train <- training(train_test_split)
+data_test <- testing(train_test_split)
+
+# Create a recipe for employees (if needed)
+my_rec <- recipe(employment_status ~ disability_status + deprivation_index, data = data_train)
+
+# Specify the model for employees (if needed)
+my_mod <- 
+  logistic_reg() %>% 
+  set_engine("glm") %>% 
+  set_mode("classification")
+
+# Add model and recipe to workflow for employees (if needed)
+my_wf <- 
+  workflow() %>% 
+  add_model(my_mod) %>% 
+  add_recipe(my_rec)
+
+# Fit model for employees (if needed)
+fitted_model <- fit(my_wf, data = data_train)
+
+# Create a resampling object for the testing data for employees (if needed)
+test_split <- rsample::initial_split(data_test, prop = 0.8)
+
+# Fit the model using the testing data for employees (if needed)
+final_fit <- last_fit(my_wf, split = test_split)
+
+# View the final fitted model for employees (if needed)
+print(final_fit)
+
+# Collect predictions for employees (if needed)
+predictions <- final_fit %>%
+  collect_predictions()
+
+# Interpret accuracy for employees (if needed)
+accuracy_table <- predictions %>%
+  select(.pred_class, employment_status) %>%
+  mutate(correct = .pred_class == employment_status) %>%
+  tabyl(correct)
+print(accuracy_table)
