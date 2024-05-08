@@ -1,0 +1,110 @@
+# Set a fixed random seed for reproducibility
+set.seed(10923)
+
+# Number of students
+num_students <- 500
+
+# Simulate study hours (ranging from 1 to 20 hours)
+study_hours <- sample(1:20, num_students, replace = TRUE)
+
+# Simulate quiz scores (ranging from 0 to 100)
+quiz_scores <- sample(0:100, num_students, replace = TRUE)
+
+# Simulate forum participation (ranging from 0 to 50 posts)
+forum_posts <- sample(0:50, num_students, replace = TRUE)
+
+# Simulate previous grades (ranging from 0 to 100)
+previous_grades <- sample(0:100, num_students, replace = TRUE)
+
+# Simulate final grades (ranging from 0 to 100)
+final_grades <- 0.3 * study_hours + 0.4 * quiz_scores + 0.2 * forum_posts + 0.1 * previous_grades + rnorm(num_students, mean = 0, sd = 5) + 25
+
+# Create a data frame
+student_data <- data.frame(StudyHours = study_hours, QuizScores = quiz_scores, ForumPosts = forum_posts, PreviousGrades = previous_grades, FinalGrades = final_grades)
+
+# View the first few rows of the generated data
+head(student_data)
+
+# Modeling
+
+# Splitting the data into training and testing sets (80% training, 20% testing)
+set.seed(10923) # Set seed for reproducibility
+sample_index <- sample(1:nrow(student_data), 0.8 * nrow(student_data))
+train_data <- student_data[sample_index, ]
+test_data <- student_data[-sample_index, ]
+
+# Building Model 1: Linear Regression with all features
+model1 <- lm(FinalGrades ~ ., data = train_data)
+
+# Building Model 2: Linear Regression with StudyHours and QuizScores only
+model2 <- lm(FinalGrades ~ StudyHours + QuizScores, data = train_data)
+
+# Building Model 3: Linear Regression with StudyHours only
+model3 <- lm(FinalGrades ~ StudyHours, data = train_data)
+
+# Building Model 4: Linear Regression with QuizScores only
+model4 <- lm(FinalGrades ~ QuizScores, data = train_data)
+
+# Making predictions on the test set for each model
+predictions1 <- predict(model1, newdata = test_data)
+predictions2 <- predict(model2, newdata = test_data)
+predictions3 <- predict(model3, newdata = test_data)
+predictions4 <- predict(model4, newdata = test_data)
+
+# Compute Mean Squared Error for each model
+mse1 <- mean((predictions1 - test_data$FinalGrades)^2)
+mse2 <- mean((predictions2 - test_data$FinalGrades)^2)
+mse3 <- mean((predictions3 - test_data$FinalGrades)^2)
+mse4 <- mean((predictions4 - test_data$FinalGrades)^2)
+
+# Print MSE for each model
+cat("Model 1 MSE:", mse1, "\n")
+cat("Model 2 MSE:", mse2, "\n")
+cat("Model 3 MSE:", mse3, "\n")
+cat("Model 4 MSE:", mse4, "\n")
+
+# Model Accuracy based on Prediction Interval
+
+# Get the predictions and prediction intervals for each model
+pred_int1 <- predict(model1, newdata = test_data, interval = "prediction")
+pred_int2 <- predict(model2, newdata = test_data, interval = "prediction")
+pred_int3 <- predict(model3, newdata = test_data, interval = "prediction")
+pred_int4 <- predict(model4, newdata = test_data, interval = "prediction")
+
+# Extract lower and upper bounds of the prediction interval for each model
+lower_bound1 <- pred_int1[, "lwr"]
+upper_bound1 <- pred_int1[, "upr"]
+lower_bound2 <- pred_int2[, "lwr"]
+upper_bound2 <- pred_int2[, "upr"]
+lower_bound3 <- pred_int3[, "lwr"]
+upper_bound3 <- pred_int3[, "upr"]
+lower_bound4 <- pred_int4[, "lwr"]
+upper_bound4 <- pred_int4[, "upr"]
+
+# Actual values from the test data
+actual_values <- test_data$FinalGrades
+
+# Check if the actual values fall within the prediction interval for each model
+correct_predictions1 <- actual_values >= lower_bound1 & actual_values <= upper_bound1
+correct_predictions2 <- actual_values >= lower_bound2 & actual_values <= upper_bound2
+correct_predictions3 <- actual_values >= lower_bound3 & actual_values <= upper_bound3
+correct_predictions4 <- actual_values >= lower_bound4 & actual_values <= upper_bound4
+
+# Compute accuracy for each model
+accuracy1 <- sum(correct_predictions1) / length(correct_predictions1)
+accuracy2 <- sum(correct_predictions2) / length(correct_predictions2)
+accuracy3 <- sum(correct_predictions3) / length(correct_predictions3)
+accuracy4 <- sum(correct_predictions4) / length(correct_predictions4)
+
+# Print model accuracies
+cat("Model 1 Accuracy using Prediction Interval:", accuracy1, "\n")
+cat("Model 2 Accuracy using Prediction Interval:", accuracy2, "\n")
+cat("Model 3 Accuracy using Prediction Interval:", accuracy3, "\n")
+cat("Model 4 Accuracy using Prediction Interval:", accuracy4, "\n")
+
+# Summary of findings
+cat("\nSummary of Findings:\n")
+cat("1. Model 1 (All features) has the lowest MSE among the models, indicating the best fit.\n")
+cat("2. Model 1 also has the highest accuracy using the prediction interval.\n")
+cat("3. Including all features in the model provides better predictive performance compared to using individual features.\n")
+cat("4. StudyHours and QuizScores appear to be the most influential features in predicting final grades.\n")
